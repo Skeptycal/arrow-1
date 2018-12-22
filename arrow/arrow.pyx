@@ -1,21 +1,56 @@
 import numpy as np
+cimport numpy as np
+np.import_array()
+
+cimport cython
+
+# def choose(n, k):
+#     terms = np.array([
+#         (n + 1.0 - i) / i
+#         for i in xrange(1, k + 1)])
+#     product = terms.prod()
+#     return np.rint(product)
 
 
-def choose(n, k):
-    terms = [
-        (n + 1.0 - i) / i
-        for i in xrange(1, k + 1)]
-    product = np.array(terms).prod()
-    return np.rint(product)
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.nonecheck(False)
+@cython.cdivision(True)
+cdef double choose(int n, int k):
+    cdef double product = 1.0
+    cdef int i = 0
+    for i in range(1, k + 1):
+        product *= (n + 1.0 - i) / i
+    return product
 
 
-def propensity(stoichiometry, state):
-    reactants = np.where(stoichiometry < 0)
-    terms = [
-        choose(state[reactant], -stoichiometry[reactant])
-        for reactant in reactants[0]]
+# def propensity(stoichiometry, state):
+#     reactants = np.where(stoichiometry < 0)
+#     terms = [
+#         choose(state[reactant], -stoichiometry[reactant])
+#         for reactant in reactants[0]]
 
-    return np.array(terms).prod()
+#     return np.array(terms).prod()
+
+
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.nonecheck(False)
+@cython.cdivision(True)
+cdef double propensity(
+    np.ndarray[np.int64_t, ndim=1] stoichiometry,
+    np.ndarray[np.int64_t, ndim=1] state):
+
+    cdef np.ndarray[np.int64_t, ndim=1] reactants = np.where(stoichiometry < 0)[0]
+
+    cdef int length = reactants.shape[0]
+    cdef int i = 0
+    cdef int reactant = 0
+    cdef double product = 1
+    for i in range(length):
+        reactant = reactants[i]
+        product *= choose(state[reactant], -stoichiometry[reactant])
+    return product
 
 
 def step(stoichiometric_matrix, rates, state, propensities=[], update_reactions=()):

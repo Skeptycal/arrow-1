@@ -1,4 +1,7 @@
 *.pyc
+*.so
+*.c
+
 __pycache__
 .python-version
 .pytest_cache
